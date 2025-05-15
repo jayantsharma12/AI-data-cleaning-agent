@@ -62,7 +62,7 @@ def load_data(uploaded_file):
 def get_gemini_recommendations(df_info, insights, visualizations):
     try:
         # Configure the Gemini API with your key
-        genai.configure(api_key="AIzaSyA5X_Aq7hUR6NddwKn2RwqtKSbvz0yEQyM")
+        genai.configure(api_key="AIzaSyA5X_Aq7hUR6NddwKn****************")
         
         # Create a model instance
         model = genai.GenerativeModel('gemini-2.0-flash')
