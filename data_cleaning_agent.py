@@ -49,7 +49,7 @@ class DataCleaningAgent:
                 # Try to infer delimiter for text files
                 with open(file_path, 'r') as f:
                     first_line = f.readline()
-                    
+                
                 # Check for common delimiters
                 if ',' in first_line:
                     self.df = pd.read_csv(file_path)
@@ -77,7 +77,7 @@ class DataCleaningAgent:
                 "columns": self.df.shape[1],
                 "column_types": self.column_types
             }
-            
+        
         except Exception as e:
             return {"status": "error", "message": str(e)}
     
@@ -89,15 +89,24 @@ class DataCleaningAgent:
         self.datetime_columns = []
         self.text_columns = []
         
+        # Define date/time related keywords
+        datetime_keywords = ['date', 'month', 'year', 'day']
+        
         for column in self.df.columns:
-            # Try to convert to datetime
-            try:
-                pd.to_datetime(self.df[column], errors='raise')
-                self.column_types[column] = "datetime"
-                self.datetime_columns.append(column)
-                continue
-            except:
-                pass
+            # Check if column name contains datetime keywords
+            col_lower = column.lower()
+            contains_datetime_keyword = any(keyword in col_lower for keyword in datetime_keywords)
+            
+            # Try to convert to datetime only if column name contains datetime keywords
+            if contains_datetime_keyword:
+                try:
+                    pd.to_datetime(self.df[column], errors='raise')
+                    self.column_types[column] = "datetime"
+                    self.datetime_columns.append(column)
+                    continue
+                except:
+                    # If conversion fails, continue with other type checks
+                    pass
             
             # Check if numeric
             if pd.api.types.is_numeric_dtype(self.df[column]):
@@ -155,16 +164,22 @@ class DataCleaningAgent:
             self.cleaning_log.append(f"Standardized {renamed_cols} column names.")
         
         # 3. Convert data types
+        datetime_keywords = ['time', 'date', 'month', 'year', 'day']
+        
         for col in self.df.columns:
             col_type = self.column_types.get(col, "unknown")
             
-            # Handle datetime columns
+            # Handle datetime columns - only convert if column name contains datetime keywords
             if col_type == "datetime":
-                try:
-                    self.df[col] = pd.to_datetime(self.df[col], errors='coerce')
-                    self.cleaning_log.append(f"Converted '{col}' to datetime format.")
-                except:
-                    pass
+                col_lower = col.lower()
+                contains_datetime_keyword = any(keyword in col_lower for keyword in datetime_keywords)
+                
+                if contains_datetime_keyword:
+                    try:
+                        self.df[col] = pd.to_datetime(self.df[col], errors='coerce')
+                        self.cleaning_log.append(f"Converted '{col}' to datetime format.")
+                    except:
+                        pass
             
             # Handle numeric columns
             elif col_type == "numeric":
@@ -276,7 +291,7 @@ class DataCleaningAgent:
         self._infer_column_types()
         
         return self.cleaning_log
-    
+
     def analyze_data(self):
         """
         Perform basic data analysis and generate insights.
@@ -421,7 +436,7 @@ class DataCleaningAgent:
                 pass
         
         return insights
-    
+
     def get_visualization_recommendations(self):
         """
         Generate recommendations for visualizations based on data types.
@@ -519,8 +534,8 @@ class DataCleaningAgent:
         # 7. Grouped bar charts for categorical vs categorical
         if len(self.categorical_columns) >= 2:
             col1 = self.categorical_columns[0]
-            col2 = self.categorical_columns[1] 
-            
+            col2 = self.categorical_columns[1]
+             
             if col1 in self.df.columns and col2 in self.df.columns:
                 # Check if cardinality isn't too high
                 if self.df[col1].nunique() <= 10 and self.df[col2].nunique() <= 10:
@@ -549,7 +564,7 @@ class DataCleaningAgent:
                     })
         
         return recommendations
-    
+
     def generate_powerbi_recommendations(self):
         """
         Generate recommendations for PowerBI dashboard pages and visualizations.
